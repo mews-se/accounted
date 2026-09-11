@@ -82,6 +82,7 @@ export function getDefaultPreferences(): KPIPreferences {
     visibleKpis: KPI_DEFINITIONS.filter((d) => d.defaultVisible).map((d) => d.id),
     kpiOrder: ALL_KPI_IDS,
     accountOverrides: {},
+    showMonthlyTable: true,
   }
 }
 
@@ -91,5 +92,6 @@ export function mergeWithDefaults(prefs: Partial<KPIPreferences>): KPIPreference
     visibleKpis: prefs.visibleKpis ?? defaults.visibleKpis,
     kpiOrder: prefs.kpiOrder ?? defaults.kpiOrder,
     accountOverrides: prefs.accountOverrides ?? defaults.accountOverrides,
+    showMonthlyTable: prefs.showMonthlyTable ?? defaults.showMonthlyTable,
   }
 }
