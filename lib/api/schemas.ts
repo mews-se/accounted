@@ -841,7 +841,8 @@ export const CreateCustomerSchema = z.object({
     .optional()
     .nullable(),
   language: z.enum(['sv', 'en']).optional(),
-  default_payment_terms: z.number().int().positive().optional(),
+  // Whole days 0-365; 0 = betalning direkt / vid mottagande.
+  default_payment_terms: z.number().int().min(0).max(365).optional(),
   notes: z.string().optional(),
 }).superRefine((customer, ctx) => {
   if (customer.personal_number && customer.customer_type !== 'individual') {
@@ -897,7 +898,8 @@ export const UpdateCustomerSchema = z.object({
     .nullable()
     .optional(),
   language: z.enum(['sv', 'en']).optional(),
-  default_payment_terms: z.number().int().positive().optional(),
+  // Whole days 0-365; 0 = betalning direkt / vid mottagande.
+  default_payment_terms: z.number().int().min(0).max(365).optional(),
   notes: z.string().optional(),
 }).superRefine((customer, ctx) => {
   if (
@@ -935,7 +937,8 @@ export const CreateSupplierSchema = z.object({
   iban: z.string().optional(),
   bic: z.string().optional(),
   default_expense_account: accountNumber.optional(),
-  default_payment_terms: z.number().int().positive().optional(),
+  // Whole days 0-365; 0 = betalning direkt / vid mottagande.
+  default_payment_terms: z.number().int().min(0).max(365).optional(),
   default_currency: CurrencySchema.nullable().optional(),
   notes: z.string().optional(),
 })
@@ -1117,7 +1120,7 @@ export const CreateJournalEntrySchema = z.object({
 export const CorrectJournalEntrySchema = z.object({
   // Optional verifikationstext for the corrected entry. When omitted the
   // server falls back to "Rättelse: <original description>"; supplying it lets
-  // the user replace a header that echoed the wrong account's label (#1031).
+  // the user replace a header that echoed the wrong account's label.
   description: z.string().trim().min(1, 'Description cannot be empty').optional(),
   lines: z.array(CreateJournalEntryLineSchema).min(2, 'At least two lines are required for double-entry'),
 })

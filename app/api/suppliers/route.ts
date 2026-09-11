@@ -64,7 +64,8 @@ export const POST = withRouteContext(
         iban: body.iban,
         bic: body.bic,
         default_expense_account: body.default_expense_account,
-        default_payment_terms: body.default_payment_terms || 30,
+        // ?? not ||: 0 days (betalning direkt) is a value, not a missing one.
+        default_payment_terms: body.default_payment_terms ?? 30,
         default_currency: body.default_currency || 'SEK',
         notes: body.notes,
       })
