@@ -148,6 +148,16 @@ export interface VatRule {
 }
 
 /**
+ * Statutory notices stamped on an invoice's reverse_charge_text at create
+ * time. The stored value is a snapshot, so the PDF template matches against
+ * these exact strings to render the notice in the recipient's language;
+ * keep them byte-identical to what getVatRules() writes.
+ */
+export const EU_REVERSE_CHARGE_NOTICE =
+  'Omvänd skattskyldighet / Reverse charge - VAT to be accounted for by the recipient as per Article 196, Council Directive 2006/112/EC'
+export const EXPORT_NOTICE_SV = 'Omsättning utanför EU, ML 10 kap.'
+
+/**
  * Determine VAT treatment based on customer type and VAT validation status.
  *
  * Rules:
@@ -179,7 +189,7 @@ export function getVatRules(
           treatment: 'reverse_charge',
           rate: 0,
           momsRuta: '39',
-          reverseChargeText: 'Omvänd skattskyldighet / Reverse charge - VAT to be accounted for by the recipient as per Article 196, Council Directive 2006/112/EC',
+          reverseChargeText: EU_REVERSE_CHARGE_NOTICE,
         }
       }
       // EU business without validated VAT number must be charged Swedish VAT
@@ -194,7 +204,7 @@ export function getVatRules(
         treatment: 'export',
         rate: 0,
         momsRuta: '40',
-        reverseChargeText: 'Omsättning utanför EU, ML 10 kap.',
+        reverseChargeText: EXPORT_NOTICE_SV,
       }
 
     default:
