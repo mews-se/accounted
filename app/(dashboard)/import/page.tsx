@@ -83,6 +83,7 @@ const SIEPreviewStep = dynamic(() => import('@/components/import/SIEPreviewStep'
 const AccountMappingStep = dynamic(() => import('@/components/import/AccountMappingStep'), { loading: ImportStepLoading })
 const ImportReviewStep = dynamic(() => import('@/components/import/ImportReviewStep'), { loading: ImportStepLoading })
 const ImportResultStep = dynamic(() => import('@/components/import/ImportResultStep'), { loading: ImportStepLoading })
+const SIEImportHistory = dynamic(() => import('@/components/import/SIEImportHistory'), { loading: ImportStepLoading })
 
 // ============================================================
 // SIE Import Wizard (unchanged, extracted into component)
@@ -1612,6 +1613,7 @@ export default function ImportPage() {
   const [view, setView] = useState<'import' | 'export'>('import')
   const [sieDialogOpen, setSieDialogOpen] = useState(false)
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [sieHistoryOpen, setSieHistoryOpen] = useState(false)
   const [exportPeriodId, setExportPeriodId] = useState<string | null>(null)
   const [exportExcludeClosing, setExportExcludeClosing] = useState(true)
   const t = useTranslations('import')
@@ -1709,7 +1711,18 @@ export default function ImportPage() {
                   sub={t('sie_description')}
                   onClick={() => setMode('sie')}
                 />
+                <ImportRow
+                  title={t('sie_history_title')}
+                  sub={t('sie_history_description')}
+                  expanded={sieHistoryOpen}
+                  onClick={() => setSieHistoryOpen((v) => !v)}
+                />
               </div>
+              {sieHistoryOpen && (
+                <div className="mt-6">
+                  <SIEImportHistory />
+                </div>
+              )}
               <p className="mt-4 px-1 text-xs leading-5 text-muted-foreground">{t('pgnote')}</p>
             </div>
           ) : (
@@ -1819,12 +1832,15 @@ function ImportRow({
   title,
   sub,
   disabled = false,
+  expanded,
   onClick,
   id,
 }: {
   title: string
   sub: string
   disabled?: boolean
+  // For rows that fold a panel open below the list.
+  expanded?: boolean
   onClick: () => void
   id?: string
 }) {
@@ -1834,6 +1850,7 @@ function ImportRow({
       id={id}
       onClick={onClick}
       disabled={disabled}
+      aria-expanded={expanded}
       className={cn(
         'group flex w-full items-center justify-between gap-4 border-b border-border px-1 py-3 text-left',
         'transition-colors duration-150 hover:bg-secondary/35',
