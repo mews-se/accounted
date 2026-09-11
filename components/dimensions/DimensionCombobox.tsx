@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Loader2, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { getErrorMessage } from '@/lib/errors/get-error-message'
@@ -50,6 +50,12 @@ export default function DimensionCombobox({
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
   const [dimensionId, setDimensionId] = useState<string | null>(null)
   const [values, setValues] = useState<DimensionValueDto[]>([])
+  // The committed value's registry row, so its name can be shown after picking.
+  const selected = useMemo(
+    () => (value ? values.find((v) => v.code === value) ?? null : null),
+    [values, value],
+  )
+  const selectedNameId = useId()
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -247,6 +253,14 @@ export default function DimensionCombobox({
     }, 150)
   }
 
+  // After a pick the field holds only the code ("1"), which told the user
+  // nothing. Write the value's full name under it, exactly as
+  // AccountCombobox does for the account name, whenever the field shows the
+  // committed code and the name adds something beyond the code itself.
+  const showSelectedName = Boolean(
+    selected && selected.name !== selected.code && value !== null && search === value,
+  )
+
   return (
     <div ref={containerRef} className="relative">
       <Input
@@ -259,7 +273,18 @@ export default function DimensionCombobox({
         disabled={disabled}
         className={`font-mono ${className ?? ''}`.trim()}
         autoComplete="off"
+        aria-describedby={showSelectedName ? selectedNameId : undefined}
       />
+
+      {showSelectedName && selected ? (
+        <p
+          id={selectedNameId}
+          data-ph-mask=""
+          className="mt-1 break-words px-1 text-xs leading-snug text-muted-foreground"
+        >
+          {selected.name}
+        </p>
+      ) : null}
 
       {/* Dropdown */}
       {isOpen && !disabled && (

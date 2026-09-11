@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
+import { DestructiveConfirmDialog } from '@/components/ui/destructive-confirm-dialog'
 import { TH_CLASS, TD_CLASS, QUIET_LINK_CLASS } from '@/components/ui/dry-table'
 import {
   Dialog,
@@ -84,6 +85,8 @@ export default function DimensionsManager() {
   const [dialog, setDialog] = useState<DialogState>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [newDimDialogOpen, setNewDimDialogOpen] = useState(false)
+  const [confirmDeleteDimOpen, setConfirmDeleteDimOpen] = useState(false)
+  const [isDeletingDim, setIsDeletingDim] = useState(false)
   const [isCreatingDimension, setIsCreatingDimension] = useState(false)
 
   const loadDimensions = useCallback(
@@ -276,6 +279,34 @@ export default function DimensionsManager() {
     }
   }
 
+  // Remove a custom dimension nobody has booked on. The DB
+  // registry guard refuses the delete with a Swedish P0001 when any posted
+  // line carries the number; the route passes that message through, so the
+  // toast says exactly which dimension and why.
+  async function handleDeleteDimension() {
+    if (!activeDim || activeDim.is_system) return
+    setIsDeletingDim(true)
+    try {
+      const res = await fetch(`/api/dimensions/${activeDim.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        toast({
+          title: t('delete_failed_title'),
+          description: getErrorMessage(json, { locale: errorLocale }),
+          variant: 'destructive',
+        })
+        return
+      }
+      toast({ title: t('dimension_deleted_title') })
+      setConfirmDeleteDimOpen(false)
+      setActiveDimId(null)
+      setSearchTerm('')
+      await loadDimensions(false)
+    } finally {
+      setIsDeletingDim(false)
+    }
+  }
+
   async function handleDeleteValue() {
     if (!activeDim || dialog?.mode !== 'edit') return
     setIsSaving(true)
@@ -412,6 +443,17 @@ export default function DimensionsManager() {
             >
               {t('new_dimension')}
             </button>
+            {activeDim && !activeDim.is_system && (
+              <button
+                type="button"
+                className={cn(QUIET_LINK_CLASS, 'disabled:pointer-events-none disabled:opacity-50')}
+                disabled={!canWrite || isDeletingDim}
+                title={!canWrite ? t('viewer_disabled_tooltip') : undefined}
+                onClick={() => setConfirmDeleteDimOpen(true)}
+              >
+                {t('delete_dimension')}
+              </button>
+            )}
             <Button
               disabled={!canWrite}
               title={!canWrite ? t('viewer_disabled_tooltip') : undefined}
@@ -526,6 +568,18 @@ export default function DimensionsManager() {
 
       {/* New dimension dialog — the content (and thus the form state)
           unmounts on close, so each open starts from a blank form. */}
+      {activeDim && !activeDim.is_system && (
+        <DestructiveConfirmDialog
+          open={confirmDeleteDimOpen}
+          onOpenChange={setConfirmDeleteDimOpen}
+          title={t('delete_dimension_confirm_title')}
+          description={t('delete_dimension_confirm_description', { name: activeDim.name })}
+          confirmLabel={t('delete_confirm_label')}
+          cancelLabel={t('delete_cancel_label')}
+          onConfirm={handleDeleteDimension}
+        />
+      )}
+
       <Dialog
         open={newDimDialogOpen}
         onOpenChange={(open) => !open && setNewDimDialogOpen(false)}
