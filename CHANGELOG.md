@@ -4,6 +4,80 @@ All notable changes to Firmabok, newest first. Versions follow the
 tags in this repository; each one is published as a container image at
 `ghcr.io/mews-se/firmabok`.
 
+## 4.2.0 — 2026-09-11
+
+Thirty changes ported from upstream Accounted, limited to what a LAN
+installation can use. Six new migrations run at the next start.
+
+Fixes:
+
+- Booking templates computed reverse-charge VAT as rate/(1+rate) of the
+  total, so 25 % became 20 % on the 2614/2645 pair; the self-assessed VAT
+  now goes on top of the base. Account 2012 is not in official BAS: the
+  reference drops it and the EF F-skatt template books on 2013, with
+  existing template rows moved. Dance admission is 6 % VAT from
+  2026-07-01. A company's own account name wins over the BAS reference
+  name, and 1580 loses its hardcoded tax-receivable label.
+- The KPI monthly breakdown counts reversed originals like the year total
+  does, so the months sum to Nettoresultat again, and bar labels no
+  longer clip.
+- SIE: the upload works in Safari and rejects the wrong file type
+  visibly, the preview names the IB debit sum correctly, account creation
+  is chunked and the import row closes on every exit, and pre-decoded
+  text with CP437 mojibake is caught. A first räkenskapsår may start
+  mid-month; opening balances and the period chain only trust
+  date-adjacent periods.
+- The momsdeklaration seeds its cadence from the configured
+  redovisningsperiod on every visit, and a company without tax settings
+  is sent to set them up instead of getting a guessed quarterly
+  declaration.
+- Recurring invoices force 0 % VAT when the company is not VAT
+  registered.
+- Supplier invoice rows with a negative amount (öresavrundning, rabatt)
+  book on the opposite side instead of as negative amounts, and an
+  invoice that nets below zero anchors on the debit side. Every write now
+  refuses negative-side lines.
+- An unpaid invoice can no longer be inserted with remaining_amount 0.
+- Every invoice write refuses an article id that belongs to another
+  company.
+- Archive integrity checks are recorded in their own ledger, so the
+  nightly control advances again.
+- Customers and suppliers accept 0-day payment terms, and the field says
+  why a value is invalid.
+- Statutory notices on the invoice PDF follow the document language.
+- The verifikat search finds a voucher by its label ("A209", "a 209"),
+  with a spinner while searching.
+- ContextPicker dropdowns work inside dialogs, and the supplier invoice
+  detail tables get a column gutter.
+- MCP: query_journal accepts a single account or a number instead of
+  silently dropping the filter, and the list tools page past PostgREST's
+  1000-row cap.
+
+Features:
+
+- The complete archive (SIE per räkenskapsår, reports, behandlingshistorik
+  and every document) can be downloaded from the Exportera tab. It was
+  only reachable through the MCP tool before.
+- Mina konton: the Verifikat column is a filter, and unused accounts can
+  be inactivated in bulk.
+- The momsdeklaration shows a banner when the period is already booked.
+- The automatic reminder switch is exposed under Fakturering, and the
+  invoice page says when reminders are off.
+- Recurring schedules take a first invoice date, so a yearly schedule
+  bills in the month you choose.
+- Nyckeltal lists every month's result and a month-by-month table, with
+  a switch in Anpassa.
+- MCP create_invoice lines accept an article id, prefilled like the web
+  line picker.
+- A booked 8999 is listed in Resultatrapport instead of hidden.
+- The import tab shows the SIE import history with undo.
+- 22 new booking templates: goods and materials, tax and VAT settlements,
+  year-end postings.
+- Dimension pickers show the value's name after picking, and an unused
+  custom dimension can be deleted.
+- The verifikat page shows who committed it.
+
+
 ## 4.1.4 — 2026-09-04
 
 Security update from dependabot; nothing in the image changes.
