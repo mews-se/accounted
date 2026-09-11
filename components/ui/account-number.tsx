@@ -42,7 +42,10 @@ export function AccountNumber({
   className,
 }: AccountNumberProps) {
   const desc = getAccountDescription(number)
-  const displayName = desc?.name ?? name
+  // The company's own account name wins over the BAS reference name: a chart
+  // row is user-editable data and must never be visually overridden by our
+  // hardcoded copy. The tooltip still shows the BAS name as reference.
+  const displayName = name || desc?.name
 
   const numberElement = (
     <span
