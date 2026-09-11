@@ -16,6 +16,7 @@ import {
 } from './dimension-resolver'
 import { createLogger } from '@/lib/logger'
 import { roundOre } from '@/lib/money'
+import { creditNatural, debitNatural } from './line-side'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   CreateJournalEntryInput,
@@ -164,13 +165,14 @@ export async function createSupplierInvoiceRegistrationEntry(
     defaultDimensions
   )
 
-  // Debit: Expense accounts (in SEK)
+  // Debit: Expense accounts (in SEK). A bucket that nets below zero (rabatt
+  // row, öresavrundning on 3740) books as a credit of the absolute value:
+  // every line carries exactly one non-negative side (debitNatural).
   const debitLines: CreateJournalEntryLineInput[] = []
   for (const bucket of expenseBuckets) {
     debitLines.push({
       account_number: bucket.account,
-      debit_amount: Math.round(bucket.amount * 100) / 100,
-      credit_amount: 0,
+      ...debitNatural(bucket.amount),
       line_description: desc,
       dimensions: bucket.dimensions,
     })
@@ -236,10 +238,11 @@ export async function createSupplierInvoiceRegistrationEntry(
   // For reverse charge, intermediate credits (2614/2624/2634) already exist, so we subtract them
   const totalDebits = lines.reduce((sum, l) => sum + l.debit_amount, 0)
   const totalCredits = lines.reduce((sum, l) => sum + l.credit_amount, 0)
+  // An invoice whose rows net below zero (a leverantörskreditfaktura keyed in
+  // as an invoice) books 2440 on the debit side instead of a negative credit.
   lines.push({
     account_number: '2440',
-    debit_amount: 0,
-    credit_amount: Math.round((totalDebits - totalCredits) * 100) / 100,
+    ...creditNatural(totalDebits - totalCredits),
     line_description: desc,
     dimensions: defaultDimensions,
     ...buildCurrencyMetadata(invoice.currency, isForeign ? invoice.total : undefined, invoice.exchange_rate),
@@ -430,12 +433,12 @@ export async function createSupplierInvoiceCashEntry(
     defaultDimensions
   )
 
-  // Debit: Expense accounts (in SEK)
+  // Debit: Expense accounts (in SEK). Negative buckets flip to the credit
+  // side (debitNatural), same rule as the registration entry.
   for (const bucket of expenseBuckets) {
     const line: CreateJournalEntryLineInput = {
       account_number: bucket.account,
-      debit_amount: Math.round(bucket.amount * 100) / 100,
-      credit_amount: 0,
+      ...debitNatural(bucket.amount),
       line_description: desc,
       dimensions: bucket.dimensions,
     }
@@ -515,8 +518,7 @@ export async function createSupplierInvoiceCashEntry(
   const totalCredits = lines.reduce((sum, l) => sum + l.credit_amount, 0)
   lines.push({
     account_number: creditAccount,
-    debit_amount: 0,
-    credit_amount: Math.round((totalDebits - totalCredits) * 100) / 100,
+    ...creditNatural(totalDebits - totalCredits),
     line_description: desc,
     dimensions: defaultDimensions,
   })
@@ -580,8 +582,7 @@ export async function createSupplierInvoicePrivatelyPaidEntry(
   for (const bucket of expenseBuckets) {
     lines.push({
       account_number: bucket.account,
-      debit_amount: Math.round(bucket.amount * 100) / 100,
-      credit_amount: 0,
+      ...debitNatural(bucket.amount),
       line_description: desc,
       dimensions: bucket.dimensions,
     })
@@ -605,10 +606,10 @@ export async function createSupplierInvoicePrivatelyPaidEntry(
 
   // Credit: Owner payable/equity, balance guarantee
   const totalDebits = lines.reduce((sum, l) => sum + l.debit_amount, 0)
+  const totalCredits = lines.reduce((sum, l) => sum + l.credit_amount, 0)
   lines.push({
     account_number: ownerAccount,
-    debit_amount: 0,
-    credit_amount: Math.round(totalDebits * 100) / 100,
+    ...creditNatural(totalDebits - totalCredits),
     line_description: desc,
     dimensions: defaultDimensions,
   })
