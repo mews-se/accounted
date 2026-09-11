@@ -27,6 +27,11 @@ export const QUIET_LINK_CLASS =
 export const HOVER_REVEAL_CLASS =
   'opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-within:opacity-100 pointer-coarse:opacity-100'
 
+// Row-selection checkboxes stay visible at rest and go solid on hover, focus
+// or a coarse pointer.
+export const CHECKBOX_REVEAL_CLASS =
+  'opacity-50 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100'
+
 // Animated row expansion (concept vwrap/vinner): grid-rows 0fr -> 1fr on
 // mount; the global reduced-motion rule collapses the transition.
 export function RowFoldout({ children }: { children: React.ReactNode }) {
