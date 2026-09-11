@@ -58,6 +58,7 @@ import type {
 import type { BASAccount } from '@/types'
 import dynamic from 'next/dynamic'
 import { FiscalYearSelector } from '@/components/common/FiscalYearSelector'
+import { FullArchiveDialog } from '@/components/import/FullArchiveDialog'
 
 function ImportStepLoading() {
   return (
@@ -1606,10 +1607,11 @@ function CSVDataImportWizard() {
 type ImportMode = null | 'psd2' | 'sie' | 'csv_data'
 
 export default function ImportPage() {
-  const { isSandbox } = useCompany()
+  const { isSandbox, role } = useCompany()
   const [mode, setMode] = useState<ImportMode>(null)
   const [view, setView] = useState<'import' | 'export'>('import')
   const [sieDialogOpen, setSieDialogOpen] = useState(false)
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
   const [exportPeriodId, setExportPeriodId] = useState<string | null>(null)
   const [exportExcludeClosing, setExportExcludeClosing] = useState(true)
   const t = useTranslations('import')
@@ -1632,13 +1634,17 @@ export default function ImportPage() {
     }
   }, [isSandbox, searchParams])
 
-  // Hash-based deep link: #sie-export lives on the export tab and opens the
-  // SIE dialog.
+  // Hash-based deep links: both live on the export tab; #sie-export opens
+  // the SIE dialog and #full-archive the archive download dialog.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (window.location.hash === '#sie-export') {
+    const hash = window.location.hash
+    if (hash === '#sie-export') {
       setView('export')
       setSieDialogOpen(true)
+    } else if (hash === '#full-archive') {
+      setView('export')
+      setArchiveDialogOpen(true)
     }
   }, [])
 
@@ -1715,9 +1721,24 @@ export default function ImportPage() {
                   sub={t('export_sie_description')}
                   onClick={() => setSieDialogOpen(true)}
                 />
+                {/* The full-archive route is owner/admin-only (double-checked
+                    server-side), so the row hides for members and viewers
+                    instead of offering a download that can only 403. */}
+                {(role === 'owner' || role === 'admin') && (
+                  <ImportRow
+                    id="full-archive"
+                    title={t('export_archive_title')}
+                    sub={t('export_archive_description')}
+                    onClick={() => setArchiveDialogOpen(true)}
+                  />
+                )}
               </div>
             </div>
           )}
+
+          {/* Full archive (SIE + reports + all documents) as the same kind of
+              small centered dialog as the SIE export below. */}
+          <FullArchiveDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen} />
 
           {/* SIE export as a small centered dialog (concept overlay convention) */}
           <Dialog open={sieDialogOpen} onOpenChange={setSieDialogOpen}>
