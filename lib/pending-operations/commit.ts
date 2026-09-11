@@ -1468,6 +1468,11 @@ async function commitCreateInvoice(
       vat_amount_sek: vatAmountSek,
       total,
       total_sek: totalSek,
+      // Fresh unpaid receivable: remaining_amount is what every payment
+      // surface reads as the open balance; leaving the NOT NULL DEFAULT 0
+      // made every agent-created invoice look settled.
+      remaining_amount: total,
+      paid_amount: 0,
       vat_treatment: notVatRegistered ? 'exempt' : vatRules.treatment,
       vat_rate: isMixedRate ? null : (uniqueRates.values().next().value ?? vatRules.rate),
       moms_ruta: notVatRegistered ? null : vatRules.momsRuta,
@@ -1981,7 +1986,7 @@ async function commitMarkInvoicePaid(
   }
 
   // Fully settled: retire every transaction's suggestion pointer at this
-  // invoice (issue #1259). No exceptTransactionId: this flow is not driven by
+  // invoice. No exceptTransactionId: this flow is not driven by
   // a bank transaction, so any pointer at it is now dead.
   if (newStatus === 'paid') {
     await clearSettledInvoiceSuggestions(supabase, companyId, 'invoice', invoiceId)
@@ -2727,7 +2732,7 @@ async function commitApproveSupplierInvoice(
   if (!invoice) return { error: 'Supplier invoice not found', status: 404 }
   // 'overdue' is approvable: the daily cron flips unbooked invoices there just
   // by aging, and a registered-only gate left an aged invoice with no way
-  // through attest (#1206). approved_at makes the approval idempotent.
+  // through attest. approved_at makes the approval idempotent.
   if (!canApproveSupplierInvoice(invoice)) {
     return {
       error: 'Fakturan är redan godkänd eller kan inte godkännas i nuvarande status',
@@ -3511,6 +3516,8 @@ async function commitConvertInvoice(
       vat_amount: proforma.vat_amount,
       vat_amount_sek: proforma.vat_amount_sek,
       total: proforma.total,
+      remaining_amount: proforma.total,
+      paid_amount: 0,
       total_sek: proforma.total_sek,
       vat_treatment: proforma.vat_treatment,
       vat_rate: proforma.vat_rate,
