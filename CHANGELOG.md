@@ -4,6 +4,21 @@ All notable changes to Firmabok, newest first. Versions follow the
 tags in this repository; each one is published as a container image at
 `ghcr.io/mews-se/firmabok`.
 
+## 4.2.1 — 2026-09-11
+
+Security update; the image rebuilds with the patched packages.
+
+- next moves from 16.3.2 to 16.3.4 to clear GHSA-2xp9-vwfh-vxw4 and
+  GHSA-p293-qw3h-jr36, unauthenticated remote code execution in the image
+  optimization API. A LAN installation is not exposed to the internet, but
+  the fix is a plain patch bump.
+- sharp moves from 0.35.3 to 0.35.4 (libvips 1.3.3) to clear
+  GHSA-rgj7-g3m4-5g8c in libheif. sharp renders invoice logos for the
+  PDF.
+- The js-yaml 4.x copy under the eslint chain moves to 4.3.2 to clear
+  GHSA-2883-xcg3-v3hh. Development only.
+
+
 ## 4.2.0 — 2026-09-11
 
 Thirty changes ported from upstream Accounted, limited to what a LAN
